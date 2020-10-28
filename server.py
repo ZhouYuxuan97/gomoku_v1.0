@@ -16,7 +16,7 @@ checkerBoard = []
 
 
 async def chat(websocket, path):
-    global VERTICAL_SIZE, HORIZONTAL_SIZE
+    global VERTICAL_SIZE, HORIZONTAL_SIZE, checkerBoard3D
     # shakehand
     await websocket.send(json.dumps({"type": "handshake"}))
     async for message in websocket:
@@ -48,6 +48,8 @@ async def chat(websocket, path):
                     message = json.dumps(
                         {"type": "init", "content": data["content"], "color": color, "HORIZONTAL_SIZE": HORIZONTAL_SIZE,
                          "VERTICAL_SIZE": VERTICAL_SIZE, "user_list": list(USERS.keys())})
+                    checkerBoard3D = np.zeros((VERTICAL_SIZE, HORIZONTAL_SIZE, 2))
+                    # print(checkerBoard3D)
                     print(message)
                 else:
                     message = json.dumps(
@@ -79,10 +81,9 @@ async def chat(websocket, path):
                     {"type": "put", "color": data["color"], "x": data["x"], "y": data["y"]})
         # set checkerboard
         elif data["type"] == 'set':
-
             VERTICAL_SIZE = int(data['ver'])
             HORIZONTAL_SIZE = int(data['hor'])
-            checkerBoard3D = np.zeros((VERTICAL_SIZE, HORIZONTAL_SIZE, 2))
+            print("reset size: ", HORIZONTAL_SIZE, VERTICAL_SIZE)
         # broadcast
         await asyncio.wait([user.send(message) for user in USERS.values()])
 
