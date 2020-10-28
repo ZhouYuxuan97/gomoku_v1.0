@@ -82,6 +82,7 @@ async def chat(websocket, path):
 
             VERTICAL_SIZE = int(data['ver'])
             HORIZONTAL_SIZE = int(data['hor'])
+            checkerBoard3D = np.zeros((VERTICAL_SIZE, HORIZONTAL_SIZE, 2))
         # broadcast
         await asyncio.wait([user.send(message) for user in USERS.values()])
 
@@ -107,16 +108,16 @@ def checkAllDirections(color, x, y, a, b):
     tx = x + a
     ty = y + b
     while (tx >= 0 and tx < HORIZONTAL_SIZE and ty >= 0 and ty < VERTICAL_SIZE and checkerBoard3D[tx][ty][level] == 1):
-        total += 1;
-        tx += a;
-        ty += b;
+        total += 1
+        tx += a
+        ty += b
 
-    tx = x - a;
-    ty = y - b;
+    tx = x - a
+    ty = y - b
     while (tx >= 0 and tx < HORIZONTAL_SIZE and ty >= 0 and ty < VERTICAL_SIZE and checkerBoard3D[tx][ty][level] == 1):
-        total += 1;
-        tx -= a;
-        ty -= b;
+        total += 1
+        tx -= a
+        ty -= b
     if (total == 5):
         return True
     return False
