@@ -5,7 +5,9 @@ var HORIZONTAL_SIZE = null;
 var VERTICAL_SIZE = null;
 var checkerBoard_type = new Array();
 var checkerBoard_state = new Array();
-var adjacentBlock  = new Array();
+var adjacentBlock = new Array();
+//  0 is wait, 1 is vs_ai, 2 is vs_human, 3 is vs_random
+var game_state = 0;
 // var turn = '';
 // var roomId = '';
 
@@ -15,7 +17,7 @@ var ctx = cvs.getContext('2d');
 
 var uname = prompt('Please enter username', 'user' + uuid(8, 16));
 var ws = new WebSocket("ws://127.0.0.1:1234");
-ws.onopen = function() {
+ws.onopen = function () {
    var data = "Sys Msg: Build Connection";
    listMsg(data);
 };
@@ -63,9 +65,9 @@ ws.onmessage = function(e) {
       case 'init':
          HORIZONTAL_SIZE=msg.HORIZONTAL_SIZE;
          VERTICAL_SIZE=msg.VERTICAL_SIZE;
-         if(color==''){
+         if (color == '' || game_state == 3) {
             color = msg.color;
-            document.querySelector('#color').innerHTML = 'Hello '+uname+'. You are ' + color+', now is your turn.';
+            document.querySelector('#color').innerHTML = 'Hello ' + uname + '. You are ' + color + ', now is your turn.';
             cvs.onclick = putChess;
          }
          cvs.width = HORIZONTAL_SIZE * GRID_SIZE;
@@ -119,7 +121,7 @@ ws.onerror = function() {
    listMsg(data);
 };
 
-//窗口关闭时，发信息给服务器，说明下线了
+//When close window, logout
 window.onbeforeunload = function() {
    var user_info = {
       'type': 'logout',
@@ -316,8 +318,6 @@ function initCheckerBoard(){
  */
 function putChess(e){
    console.log('draw a chess');
-   document.querySelector('#color').innerHTML = 'Hello '+uname+'. You are ' + color+ ", now is opponent turn.";
-   cvs.onclick=null;
    var x = parseInt((e.pageX - cvs.offsetLeft) / GRID_SIZE);
    var y = parseInt((e.pageY - cvs.offsetTop) / GRID_SIZE);
    console.log(x, y);
@@ -326,18 +326,22 @@ function putChess(e){
    y=random[1];
 
    // only when game start can putchess, otherwise return
-   if(checkerBoard_state[x][y]){
-      checkerBoard_type[x][y]=color;
-      checkerBoard_state[x][y]=false;
+   if(checkerBoard_state[x][y]) {
+      document.querySelector('#color').innerHTML = 'Hello ' + uname + '. You are ' + color + ", now is opponent turn.";
+      cvs.onclick = null;
+      checkerBoard_type[x][y] = color;
+      checkerBoard_state[x][y] = false;
       var msg = {
          'x': x,
-         'y':y,
-         'color':color,
+         'y': y,
+         'color': color,
          'type': 'put'
       };
       sendMsg(msg);
       drawChess(x, y);
       console.log(x, y);
+   } else {
+      console.log('not vaild place');
    }
 
  //  document.getElementById('tips').innerText = 'Now ' +( turn ==false? 'Black' : 'White') +' Turn!'
@@ -375,7 +379,7 @@ function drawCheckerBoard(){
 
 document.getElementById('set').onclick = function(){
     var ver=document.getElementById("ver").value;
-   var hor=document.getElementById("hor").value;
+   var hor = document.getElementById("hor").value;
    var msg = {
       'ver': ver,
       'hor': hor,
@@ -385,15 +389,25 @@ document.getElementById('set').onclick = function(){
    sendMsg(msg);
 }
 
+document.getElementById('vs_random').onclick = function () {
+   var msg = {
+      'type': 'vs_random',
+      'content': uname
+   };
+   game_state = 3;
+   sendMsg(msg);
+}
+
+
 /**
  * find available adjacent block
  */
-function findAdjcblock(x,y) {
-   var i=0;
-   if(x-1>0 && checkerBoard_state[x-1][y]==true){
-      adjacentBlock[i++]=[x-1,y];
+function findAdjcblock(x, y) {
+   var i = 0;
+   if (x - 1 > 0 && checkerBoard_state[x - 1][y] == true) {
+      adjacentBlock[i++] = [x - 1, y];
    }
-   if(x+1<HORIZONTAL_SIZE && checkerBoard_state[x+1][y]==true){
+   if (x + 1 < HORIZONTAL_SIZE && checkerBoard_state[x + 1][y] == true) {
       adjacentBlock[i++]=[x+1,y];
    }
    if(y-1>0 && checkerBoard_state[x][y-1]==true){
