@@ -398,6 +398,15 @@ document.getElementById('vs_random').onclick = function () {
    sendMsg(msg);
 }
 
+document.getElementById('vs_ai').onclick = function () {
+   var msg = {
+      'type': 'vs_ai',
+      'content': uname
+   };
+   game_state = 1;
+   sendMsg(msg);
+}
+
 
 /**
  * find available adjacent block

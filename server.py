@@ -3,8 +3,11 @@ import json
 import websockets
 import numpy as np
 import random
+import client.mcts
 
 # name:websockets
+from client.Gomoku import GomokuState
+
 USERS = {}
 peopleList = []
 # computer or AI always plays white
@@ -13,7 +16,7 @@ HORIZONTAL_SIZE = 20
 VERTICAL_SIZE = 20
 turn = 'black'
 # level 0: black, level 1: white
-checkerBoard3D = np.zeros((HORIZONTAL_SIZE, VERTICAL_SIZE, 2))
+checkerBoard3D = np.zeros((2, HORIZONTAL_SIZE, VERTICAL_SIZE))
 checkerBoard = []
 # 0 is wait, 1 is vs_ai, 2 is vs_human, 3 is vs_random
 game_state = 0
@@ -52,7 +55,7 @@ async def chat(websocket, path):
                     message = json.dumps(
                         {"type": "init", "content": data["content"], "color": color, "HORIZONTAL_SIZE": HORIZONTAL_SIZE,
                          "VERTICAL_SIZE": VERTICAL_SIZE, "user_list": list(USERS.keys())})
-                    checkerBoard3D = np.zeros((HORIZONTAL_SIZE, VERTICAL_SIZE, 2))
+                    checkerBoard3D = np.zeros((2, VERTICAL_SIZE, HORIZONTAL_SIZE))
                     # print(checkerBoard3D)
                     print(message)
                 else:
@@ -79,9 +82,9 @@ async def chat(websocket, path):
                         {"type": "gameover", "color": data["color"], "x": data["x"], "y": data["y"]})
                 else:
                     if data["color"] == "white":
-                        checkerBoard3D[data["y"]][data["x"]][1] = 1
+                        checkerBoard3D[1][data["y"]][data["x"]] = 1
                     else:
-                        checkerBoard3D[data["y"]][data["x"]][0] = 1
+                        checkerBoard3D[0][data["y"]][data["x"]] = 1
                     message = json.dumps(
                         {"type": "put", "color": data["color"], "x": data["x"], "y": data["y"]})
             if game_state == 3:
@@ -89,9 +92,24 @@ async def chat(websocket, path):
                     message = json.dumps(
                         {"type": "gameover", "color": data["color"], "x": data["x"], "y": data["y"]})
                 else:
-                    checkerBoard3D[data["y"]][data["x"]][0] = 1
-                    x, y = random_put()
-                    checkerBoard3D[y][x][1] = 1
+                    checkerBoard3D[0][data["y"]][data["x"]] = 1
+                    y, x = random_put()
+                    checkerBoard3D[1][y][x] = 1
+                    if checkGameover(x, y, "white"):
+                        message = json.dumps(
+                            {"type": "gameover", "color": "white", "x": x, "y": y})
+                    else:
+                        message = json.dumps(
+                            {"type": "put", "color": "white", "x": x, "y": y})
+            if game_state == 1:
+                if checkGameover(data["x"], data["y"], data["color"]):
+                    message = json.dumps(
+                        {"type": "gameover", "color": data["color"], "x": data["x"], "y": data["y"]})
+                else:
+                    checkerBoard3D[0][data["y"]][data["x"]] = 1
+                    # TODO
+                    # y, x = mcts_to_checkerboard()
+                    checkerBoard3D[1][y][x] = 1
                     if checkGameover(x, y, "white"):
                         message = json.dumps(
                             {"type": "gameover", "color": "white", "x": x, "y": y})
@@ -110,7 +128,15 @@ async def chat(websocket, path):
             message = json.dumps(
                 {"type": "init", "content": data["content"], "color": color, "HORIZONTAL_SIZE": HORIZONTAL_SIZE,
                  "VERTICAL_SIZE": VERTICAL_SIZE, "user_list": list(USERS.keys())})
-            checkerBoard3D = np.zeros((HORIZONTAL_SIZE, VERTICAL_SIZE, 2))
+            checkerBoard3D = np.zeros((2, VERTICAL_SIZE, HORIZONTAL_SIZE))
+
+        elif data["type"] == 'vs_ai':
+            game_state = 1
+            color = "black"
+            message = json.dumps(
+                {"type": "init", "content": data["content"], "color": color, "HORIZONTAL_SIZE": HORIZONTAL_SIZE,
+                 "VERTICAL_SIZE": VERTICAL_SIZE, "user_list": list(USERS.keys())})
+            checkerBoard3D = np.zeros((2, VERTICAL_SIZE, HORIZONTAL_SIZE))
         # broadcast
         await asyncio.wait([user.send(message) for user in USERS.values()])
 
@@ -121,7 +147,7 @@ def random_put():
     count = 0
     for i in range(VERTICAL_SIZE):
         for j in range(HORIZONTAL_SIZE):
-            if checkerBoard3D[j][i][1] == 0 and checkerBoard3D[j][i][0] == 0:
+            if checkerBoard3D[1][i][j] == 0 and checkerBoard3D[0][i][j] == 0:
                 count += 1
                 choice[count] = [i, j]
     random_pick = random.randint(1, count)
@@ -149,14 +175,14 @@ def checkAllDirections(color, x, y, a, b):
     total = 1
     tx = x + a
     ty = y + b
-    while tx >= 0 and tx < HORIZONTAL_SIZE and ty >= 0 and ty < VERTICAL_SIZE and checkerBoard3D[ty][tx][level] == 1:
+    while tx >= 0 and tx < HORIZONTAL_SIZE and ty >= 0 and ty < VERTICAL_SIZE and checkerBoard3D[level][ty][tx] == 1:
         total += 1
         tx += a
         ty += b
 
     tx = x - a
     ty = y - b
-    while tx >= 0 and tx < HORIZONTAL_SIZE and ty >= 0 and ty < VERTICAL_SIZE and checkerBoard3D[ty][tx][level] == 1:
+    while tx >= 0 and tx < HORIZONTAL_SIZE and ty >= 0 and ty < VERTICAL_SIZE and checkerBoard3D[level][ty][tx] == 1:
         total += 1
         tx -= a
         ty -= b
@@ -164,6 +190,14 @@ def checkAllDirections(color, x, y, a, b):
         return True
     print(total)
     return False
+
+
+def mcts_to_checkerboard(state: GomokuState):
+    for i in range(VERTICAL_SIZE):
+        for j in range(HORIZONTAL_SIZE):
+            if state[j, i] != '_':
+                if checkerBoard3D[1][j][i] == 0 or checkerBoard3D[0][j][i] == 0:
+                    return i, j
 
 
 start_server = websockets.serve(chat, "127.0.0.1", 1234)
