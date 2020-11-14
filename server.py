@@ -192,11 +192,11 @@ def checkAllDirections(color, x, y, a, b):
     return False
 
 
-def mcts_to_checkerboard(state: GomokuState):
+def mcts_to_xy(state: GomokuState):
     for i in range(VERTICAL_SIZE):
         for j in range(HORIZONTAL_SIZE):
             if state[j, i] != '_':
-                if checkerBoard3D[1][j][i] == 0 or checkerBoard3D[0][j][i] == 0:
+                if checkerBoard3D[1][j][i] == 0 and checkerBoard3D[0][j][i] == 0:
                     return i, j
 
 
