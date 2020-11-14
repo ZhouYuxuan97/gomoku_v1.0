@@ -108,7 +108,10 @@ async def chat(websocket, path):
                 else:
                     checkerBoard3D[0][data["y"]][data["x"]] = 1
                     # TODO
-                    # y, x = mcts_to_checkerboard()
+                    print("AI's turn: thinking...")
+                    board = checkerboard3D_to_board()
+                    child = client.mcts.mcts(client.mcts.Node(GomokuState(board)))
+                    y, x = mcts_to_xy(child)
                     checkerBoard3D[1][y][x] = 1
                     if checkGameover(x, y, "white"):
                         message = json.dumps(
@@ -192,10 +195,22 @@ def checkAllDirections(color, x, y, a, b):
     return False
 
 
-def mcts_to_xy(state: GomokuState):
+def checkerboard3D_to_board():
+    board = np.empty((VERTICAL_SIZE, HORIZONTAL_SIZE), dtype=str)
+    board[:] = "_"
+    for x in range(VERTICAL_SIZE):
+        for y in range(HORIZONTAL_SIZE):
+            if checkerBoard3D[0][x][y] == 1:
+                board[x][y] = "X"
+                continue
+            if checkerBoard3D[1][x][y] == 1:
+                board[x][y] = "O"
+    return board
+
+def mcts_to_xy(node: client.mcts.Node):
     for i in range(VERTICAL_SIZE):
         for j in range(HORIZONTAL_SIZE):
-            if state[j, i] != '_':
+            if node.state.board[j, i] != '_':
                 if checkerBoard3D[1][j][i] == 0 and checkerBoard3D[0][j][i] == 0:
                     return i, j
 
