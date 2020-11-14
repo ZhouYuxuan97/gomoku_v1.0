@@ -16,7 +16,7 @@ class GomokuState(object):
         for x in range(self.board.shape[0] - 5):
             for y in range(self.board.shape[1] - 5):
                 for player, score in zip("XO", [+1, -1]):
-                    subBoard = self.board[x:x + 4, y:y + 4]
+                    subBoard = self.board[x:x + 5, y:y + 5]
                     if (subBoard == player).all(axis=0).any(): return score
                     if (subBoard == player).all(axis=1).any(): return score
                     if (np.diag(subBoard) == player).all(): return score
@@ -58,7 +58,6 @@ if __name__ == "__main__":
         if state.is_leaf(): break
         actions = state.valid_actions()
         print(actions)
-        # if len(actions) == 0: break # useless line?
         state = state.perform(actions[0])
         print(state)
     print("max score, is over:")
