@@ -6,10 +6,13 @@ var VERTICAL_SIZE = null;
 var checkerBoard_type = new Array();
 var checkerBoard_state = new Array();
 var adjacentBlock = new Array();
-//  0 is wait, 1 is vs_ai, 2 is vs_human, 3 is vs_random
+//  0 is wait, 1 is vs_ai, 2 is vs_human, 3 is vs_random, 4 is ai_vs_ai
 var game_state = 0;
-// var turn = '';
-// var roomId = '';
+
+//for ai_vs_ai
+var AI_next_x = '';
+var AI_next_y = '';
+var AI_next_color = 'black';
 
 var cvs = document.getElementById('cvs');
 var ctx = cvs.getContext('2d');
@@ -82,19 +85,47 @@ ws.onmessage = function(e) {
          name_list = msg.user_list;
          change_type = msg.type;
          temp_color = msg.color;
-         dealUser(user_name, change_type, name_list,temp_color);
+         dealUser(user_name, change_type, name_list, temp_color);
          sender = 'Sys Msg: ';
          msg.content = 'Game Start!'
          break;
 
+      case 'init_ai_vs_ai':
+         HORIZONTAL_SIZE = msg.HORIZONTAL_SIZE;
+         VERTICAL_SIZE = msg.VERTICAL_SIZE;
+
+         color = msg.color;
+         document.querySelector('#color').innerHTML = 'Hello ' + uname + '. You are in AI_vs_AI game, press Enter to start';
+         cvs.onclick = null;
+
+         cvs.width = HORIZONTAL_SIZE * GRID_SIZE;
+         cvs.height = VERTICAL_SIZE * GRID_SIZE;
+         document.getElementById('set').disabled = false;
+         initCheckerBoard();
+         drawCheckerBoard();
+         user_name = msg.content;
+         name_list = msg.user_list;
+         change_type = msg.type;
+         temp_color = msg.color;
+         dealUser(user_name, change_type, name_list, temp_color);
+         sender = 'Sys Msg: ';
+         msg.content = 'AI_vs_AI Game has initialized!'
+         break;
+
+      case 'ai_vs_ai_put':
+         AI_next_x = msg.x;
+         AI_next_y = msg.y;
+         document.querySelector('#color').innerHTML = AI_next_color + " is ready to placed a stone on (" + AI_next_x + ", " + AI_next_y + "), press Enter to place";
+         return;
+
       case 'put':
-         if(color!=msg.color && color!='visitor'){
-            var x=msg.x;
-            var y=msg.y;
-            checkerBoard_type[x][y]=msg.color;
-            checkerBoard_state[x][y]=false;
-            drawChess(x,y);
-            document.querySelector('#color').innerHTML = 'Hello '+uname+'. You are ' + color+ ", now is your turn.";
+         if (color != msg.color && color != 'visitor') {
+            var x = msg.x;
+            var y = msg.y;
+            checkerBoard_type[x][y] = msg.color;
+            checkerBoard_state[x][y] = false;
+            drawChess(x, y);
+            document.querySelector('#color').innerHTML = 'Hello ' + uname + '. You are ' + color + ", now is your turn.";
             cvs.onclick = putChess;
          }
          return;
@@ -247,46 +278,6 @@ function uuid(len, radix) {
    return uuid.join('');
 }
 
-// socket.on('conn', function(data){
-//    console.log(data);
-//    color = data.color;
-//    document.querySelector('#color').innerHTML = 'You are ' + color + ', in Room ' + roomId;
-//    if(color=='visitor'){
-//       document.getElementById('restart').disabled = true;
-//    }
-//
-//    HORIZONTAL_SIZE = data.hs;
-//    VERTICAL_SIZE = data.vs;
-//
-//    cvs.width = HORIZONTAL_SIZE * GRID_SIZE;
-//    cvs.height = VERTICAL_SIZE * GRID_SIZE;
-//
-//    // if(data.num == 2){
-//    //    init();
-//    // }
-// });
-//
-// socket.on('getCheckerBoard', function(data){
-//    console.log('receive checkerboard from server ' );
-//    console.log( data);
-//    checkerBoard = data.checkerBoard;
-//    turn = data.turn;
-//    drawCheckerBoard();
-//    if(color == turn){
-//       cvs.onclick = putChess;
-//    }else{
-//       cvs.onclick = null;
-//    };
-//
-//    document.querySelector('#info').innerHTML = 'Now ' + turn + ' turn';
-//
-//    // if(!cvs.onclick){
-//    //    cvs.onclick = putChess;
-//    // }
-// });
-//
-
-
 /**
  * initial checkboard
  */
@@ -407,7 +398,35 @@ document.getElementById('vs_ai').onclick = function () {
    game_state = 1;
    sendMsg(msg);
 }
+document.getElementById('ai_vs_ai').onclick = function () {
+   var msg = {
+      'type': 'ai_vs_ai',
+      'content': uname
+   };
 
+   sendMsg(msg);
+}
+
+document.getElementById('enter').onclick = function () {
+   if (game_state == 0) {
+      game_state = 3;
+   } else {
+      checkerBoard_type[AI_next_x][AI_next_y] = AI_next_color;
+      checkerBoard_state[AI_next_x][AI_next_y] = false;
+      drawChess(AI_next_x, AI_next_y);
+      document.querySelector('#color').innerHTML = AI_next_color + " has placed a stone on (" + AI_next_x + ", " + AI_next_y + ")";
+      AI_next_color = (AI_next_color == "black") ? "white" : "black"
+   }
+   var msg = {
+      'type': 'ai_vs_ai_put',
+      'content': uname,
+      'color': AI_next_color
+   };
+
+   sendMsg(msg);
+   document.querySelector('#color').innerHTML = AI_next_color + " is thinking.....";
+   wait(2000);
+}
 
 /**
  * find available adjacent block
