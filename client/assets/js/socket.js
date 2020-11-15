@@ -60,12 +60,15 @@ ws.onmessage = function(e) {
          change_type = msg.type;
          temp_color = msg.color;
 
-         dealUser(user_name, change_type, name_list,temp_color);
+         dealUser(user_name, change_type, name_list, temp_color);
          return;
       case 'init':
-         HORIZONTAL_SIZE=msg.HORIZONTAL_SIZE;
-         VERTICAL_SIZE=msg.VERTICAL_SIZE;
-         if (color == '' || game_state == 3) {
+         HORIZONTAL_SIZE = msg.HORIZONTAL_SIZE;
+         VERTICAL_SIZE = msg.VERTICAL_SIZE;
+         if (color == '' || game_state == 1 || game_state == 3) {
+            if (color == '') {
+               game_state = 2;
+            }
             color = msg.color;
             document.querySelector('#color').innerHTML = 'Hello ' + uname + '. You are ' + color + ', now is your turn.';
             cvs.onclick = putChess;
@@ -102,8 +105,6 @@ ws.onmessage = function(e) {
             checkerBoard_type[x][y]=msg.color;
             checkerBoard_state[x][y]=false;
             drawChess(x,y);
-            // document.querySelector('#color').innerHTML = 'Hello '+uname+'. You are ' + color+ ", now is your turn.";
-
          }
          document.querySelector('#color').innerHTML = 'Hello '+uname+'. You are ' + color+ ", now "+msg.color+" win!";
          alert(msg.color == color ? 'You win!' : 'You lose!');
@@ -457,70 +458,4 @@ function randomPut(x,y) {
    return [x,y]
 }
 
-//
-// socket.on('gameover',function(data){
-//    document.querySelector('#info').innerHTML = (data == 'black' ? 'Black Win!' : 'White Win!');
-//    cvs.onclick = null;
-//    console.log('gameover');
-//    alert(data == 'black' ? 'Black Win!' : 'White Win!');
-// });
-//
-// document.getElementById('restart').onclick = function(){
-//    if(color !='null'){
-//       socket.emit('restart',roomId);
-//    }
-// }
-//
-// document.getElementById('join').onclick = function(){
-//    roomId=document.getElementById("roomId").value;
-//    console.log(roomId);
-//    socket.emit('joinRoom',roomId);
-//    document.getElementById("restart").disabled=false;
-//    document.getElementById("join").disabled=true;
-//    document.getElementById("leave").disabled=false;
-// }
-//
-// document.getElementById('leave').onclick = function(){
-//    // console.log(roomId);
-//    if (confirm("Want to leave this game?")) {
-//       document.getElementById("restart").disabled=true;
-//       document.getElementById("join").disabled=false;
-//       document.getElementById("leave").disabled=true;
-//       cvs.onclick = null;
-//
-//       socket.emit('leaveRoom',roomId,color);
-//       document.querySelector('#info').innerHTML = ('Enter room id to Join a game!');
-//       document.querySelector('#color').innerHTML = ('You are a visitor.');
-// //      location.reload();
-//    }
-// }
-//
-//
-// socket.on('restartRequest',function(){
-//    if(color !='visitor'){
-//       // console.log('receive ' +passcolor +' restart request');
-//       if (confirm("Want to restart?")) {
-//          socket.emit('restartConfirm',roomId, color);
-//
-//       } else {
-//          socket.emit('restartConfirm',RoomId, (color + 'doesn\'t'));
-//       }
-//    }
-// });
-//
-// socket.on('leaveInfo',function(color){
-//    console.log(color + ' left the game');
-//    document.querySelector('#info').innerHTML = ('Wait for another gamer.');
-//  //  socket.emit('stopInterv');
-//    alert(color + ' left the game');
-//    cvs.onclick = null;
-// //   socket.emit('joinRoom',roomId);
-// });
-//
-// socket.on('stocHeartBeat',function(nowtime){
-//    if(color !='visitor'){
-//       console.log(color + ' receive heartbeat at' + nowtime);
-//       socket.emit('ctosHeartBeat', nowtime);
-//    }
-// });
 

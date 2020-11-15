@@ -96,7 +96,7 @@ def mcts(node):
     print("Total number of processed ACTIONs(direct children) of current root node is",
           sum(np.array([child.N for child in node.children]) != 0))
     print("Total number of all processed nodes is", cal_processed_nodes(node))
-
+    print(node.children[middle_most_i].state)
     return node.children[middle_most_i]
 
 
