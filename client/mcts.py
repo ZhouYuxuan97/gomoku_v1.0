@@ -62,12 +62,13 @@ def back_propagate(node, result):
 def mcts(node):
     start = time.time()
     situation_judgment = situation_judgement(node)
-    print("situation judgement costs", time.time() - start, "s.")
+    print("situation judgement cost", time.time() - start, "s.")
     if situation_judgment:
         return situation_judgment
-    # start mcst
     time_start = time.time()
-    while (time.time() - time_start < 20):
+
+    # start mcst
+    while (time.time() - time_start < 30):
         selection_child = node.choose_child("uct")  # choose an unexpanded child using UCT
         expansion_child = selection_child.choose_child("random")  # expand the chosen child
         result = rollout(expansion_child)
