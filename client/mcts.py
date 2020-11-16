@@ -60,18 +60,20 @@ def back_propagate(node, result):
         node.Q = node.score_total / node.N
 
 def mcts(node):
-    iterate = 1
-    time_start = time.time()
+    start = time.time()
+    situation_judgment = situation_judgement(node)
+    print("situation judgement costs", time.time() - start, "s.")
+    if situation_judgment:
+        return situation_judgment
     # start mcst
-    while (time.time() - time_start < 10):
-        # print("\n======= iteration",iterate, "=======")
+    time_start = time.time()
+    while (time.time() - time_start < 20):
         selection_child = node.choose_child("uct")  # choose an unexpanded child using UCT
         expansion_child = selection_child.choose_child("random")  # expand the chosen child
         result = rollout(expansion_child)
         back_propagate(expansion_child, result)
 
         selection_child.expand = True
-        iterate += 1
 
     # choose a middle-most position among largest uct?
     # i = np.argmax([child.Q + np.sqrt(CONFIDENT * np.log(node.N+1) / (child.N + 1)) for child in node.children])
@@ -99,6 +101,88 @@ def mcts(node):
     print(node.children[middle_most_i].state)
     return node.children[middle_most_i]
 
+def situation_judgement(node:Node):
+    situation = ""
+    for x in range(node.state.board.shape[0] - 4):
+        for y in range(node.state.board.shape[1] - 4):
+            subBoard = node.state.board[x:x + 5, y:y + 5]
+            subBoard_num = np.zeros((5,5))
+            for i in range(5):
+                for j in range(5):
+                    if subBoard[i][j] == "X":
+                        subBoard_num[i][j] = 1
+                    if subBoard[i][j] == "O":
+                        subBoard_num[i][j] = -1
+            # 1.AI have 4
+            # 1.1 Vertical
+            sum_axis0 = np.sum(subBoard_num, axis=0)
+            if (sum_axis0==4).any():
+                index_line = list(sum_axis0 == 4).index(True)
+                list_4 = list(subBoard[:,index_line])
+                index = list_4.index("_")
+                node.state.board[x+index][y+index_line] = "X"
+                situation = "VERTICAL 4"
+                return node
+            # 1.2 Horizontal
+            sum_axis1 = np.sum(subBoard_num, axis=1)
+            if (sum_axis1 == 4).any():
+                index_line = list(sum_axis1 == 4).index(True)
+                list_4 = list(subBoard[index_line])
+                index = list_4.index("_")
+                node.state.board[x+index_line][y+index] = "X"
+                situation = "HORIZONTAL 4"
+                return node
+            # 1.3 ↘Diagonal
+            list_diag = list(np.diag(subBoard))
+            if list_diag.count("X")==4 and "_" in list_diag:
+                index = list_diag.index("_")
+                node.state.board[x+index][y+index] = "X"
+                situation = "DIAGONAL 4"
+                return node
+            # 1.4 ↙Diagonal
+            list_diag = list(np.diag(np.rot90(subBoard)))
+            if list_diag.count("X") == 4 and "_" in list_diag:
+                index = list_diag.index("_")
+                node.state.board[x + index][y + 5 - index] = "X"
+                situation = "↙DIAGONAL 4"
+                return node
+
+            # 2.opponent has 4
+            # 2.1 Vertical
+            sum_axis0 = np.sum(subBoard_num, axis=0)
+            if (sum_axis0 == -4).any():
+                index_line = list(sum_axis0 == -4).index(True)
+                list_4 = list(subBoard[:, index_line])
+                index = list_4.index("_")
+                node.state.board[x + index][y+index_line] = "X"
+                situation = "OPPONENT VERTICAL 4"
+                return node
+            # 2.2 Horizontal
+            sum_axis1 = np.sum(subBoard_num, axis=1)
+            if (sum_axis1 == -4).any():
+                index_line = list(sum_axis1 == -4).index(True)
+                list_4 = list(subBoard[index_line])
+                index = list_4.index("_")
+                node.state.board[x+index_line][y + index] = "X"
+                situation = "OPPONENT HORIZONTAL 4"
+                return node
+            # 2.3 ↘Diagonal
+            list_diag = list(np.diag(subBoard))
+            if list_diag.count("X") == -4 and "_" in list_diag:
+                index = list_diag.index("_")
+                node.state.board[x + index][y + index] = "X"
+                situation = "OPPONENT ↘ 4"
+                return node
+            # 2.4 ↙Diagonal
+            list_diag = list(np.diag(np.rot90(subBoard)))
+            if list_diag.count("X") == -4 and "_" in list_diag:
+                index = list_diag.index("_")
+                node.state.board[x + index][y + 5 - index] = "X"
+                situation = "OPPONENT ↙ 4"
+                return node
+
+    # current board has no situations above
+    return None
 
 def cal_processed_nodes(node):
     count = 1
