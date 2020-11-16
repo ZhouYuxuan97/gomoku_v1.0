@@ -18,7 +18,7 @@ turn = 'black'
 # level 0: black, level 1: white
 checkerBoard3D = np.zeros((2, HORIZONTAL_SIZE, VERTICAL_SIZE))
 checkerBoard = []
-# 0 is wait, 1 is vs_ai, 2 is vs_human, 3 is vs_random
+# 0 is wait, 1 is vs_ai, 2 is vs_human, 3 is vs_random, 4 is ai_vs_ai
 game_state = 0
 
 
@@ -52,6 +52,7 @@ async def chat(websocket, path):
             USERS[data["content"]] = websocket
             if len(USERS) != 0:  # asyncio.wait doesn't accept an empty list
                 if len(colorList) == 0 and color != 'visitor':
+                    game_state = 2
                     message = json.dumps(
                         {"type": "init", "content": data["content"], "color": color, "HORIZONTAL_SIZE": HORIZONTAL_SIZE,
                          "VERTICAL_SIZE": VERTICAL_SIZE, "user_list": list(USERS.keys())})
@@ -119,6 +120,19 @@ async def chat(websocket, path):
                     else:
                         message = json.dumps(
                             {"type": "put", "color": "white", "x": x, "y": y})
+
+        elif data["type"] == 'ai_vs_ai_put':
+            print("AI's turn: thinking...")
+            board = checkerboard3D_to_board()
+            child = client.mcts.mcts(client.mcts.Node(GomokuState(board)))
+            y, x = mcts_to_xy(child)
+            if data["color"] == "black":
+                checkerBoard3D[0][y][x] = 1
+            else:
+                checkerBoard3D[1][y][x] = 1
+            message = json.dumps(
+                {"type": "ai_vs_ai_put", "x": x, "y": y})
+
         # set checkerboard
         elif data["type"] == 'set':
             VERTICAL_SIZE = int(data['ver'])
@@ -138,6 +152,15 @@ async def chat(websocket, path):
             color = "black"
             message = json.dumps(
                 {"type": "init", "content": data["content"], "color": color, "HORIZONTAL_SIZE": HORIZONTAL_SIZE,
+                 "VERTICAL_SIZE": VERTICAL_SIZE, "user_list": list(USERS.keys())})
+            checkerBoard3D = np.zeros((2, VERTICAL_SIZE, HORIZONTAL_SIZE))
+
+        elif data["type"] == 'ai_vs_ai':
+            game_state = 3
+            color = "black"
+            message = json.dumps(
+                {"type": "init_ai_vs_ai", "content": data["content"], "color": color,
+                 "HORIZONTAL_SIZE": HORIZONTAL_SIZE,
                  "VERTICAL_SIZE": VERTICAL_SIZE, "user_list": list(USERS.keys())})
             checkerBoard3D = np.zeros((2, VERTICAL_SIZE, HORIZONTAL_SIZE))
         # broadcast
@@ -207,11 +230,13 @@ def checkerboard3D_to_board():
                 board[x][y] = "O"
     return board
 
+
+
 def mcts_to_xy(node: client.mcts.Node):
     for i in range(VERTICAL_SIZE):
         for j in range(HORIZONTAL_SIZE):
-            if node.state.board[j, i] != '_':
-                if checkerBoard3D[1][j][i] == 0 and checkerBoard3D[0][j][i] == 0:
+            if node.state.board[i, j] != '_':
+                if checkerBoard3D[1][i][j] == 0 and checkerBoard3D[0][i][j] == 0:
                     return i, j
 
 

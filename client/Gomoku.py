@@ -58,7 +58,6 @@ if __name__ == "__main__":
         if state.is_leaf(): break
         actions = state.valid_actions()
         print(actions)
-        # if len(actions) == 0: break # useless line?
         state = state.perform(actions[0])
         print(state)
     print("max score, is over:")
