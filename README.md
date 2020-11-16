@@ -45,4 +45,4 @@
 1. Player list, online / offline notification, game statues notification functions are available. 
 2. Chat room function is available. 
 3. Restart function when playing is available. 
-4. •	Watch function is not available (please don’t load more index.html when playing).
+4. Watch function is not available (please don’t load more index.html when playing).
