@@ -231,6 +231,7 @@ def checkerboard3D_to_board():
     return board
 
 
+
 def mcts_to_xy(node: client.mcts.Node):
     for i in range(VERTICAL_SIZE):
         for j in range(HORIZONTAL_SIZE):
