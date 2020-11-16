@@ -63,7 +63,7 @@ def mcts(node):
     iterate = 1
     time_start = time.time()
     # start mcst
-    while (time.time() - time_start < 10):
+    while (time.time() - time_start < 20):
         # print("\n======= iteration",iterate, "=======")
         selection_child = node.choose_child("uct")  # choose an unexpanded child using UCT
         expansion_child = selection_child.choose_child("random")  # expand the chosen child

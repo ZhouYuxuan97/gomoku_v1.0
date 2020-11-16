@@ -403,12 +403,12 @@ document.getElementById('ai_vs_ai').onclick = function () {
       'type': 'ai_vs_ai',
       'content': uname
    };
-
+   game_state = 0;
    sendMsg(msg);
 }
 
 document.getElementById('enter').onclick = function () {
-   if (game_state == 0) {
+   if (game_state != 3) {
       game_state = 3;
    } else {
       checkerBoard_type[AI_next_x][AI_next_y] = AI_next_color;
