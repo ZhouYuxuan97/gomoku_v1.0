@@ -1,16 +1,18 @@
+import csv
 import time
-
+import random
 import numpy as np
 
 from client.Gomoku import GomokuState, initial_state
 
 
 class Node(object):
-    def __init__(self, state: GomokuState, parent=None):
+    def __init__(self, state: GomokuState, depth=0):
         self.state = state
-        self.parent = parent
+        # self.parent = parent
         self.children = []
         self.expand = False
+        self.depth = depth
         self.score_total = 0
         self.N = 0
         self.Q = 0
@@ -19,7 +21,7 @@ class Node(object):
         actions = self.state.valid_actions()
         children = []
         for action in actions:
-            children.append(Node(self.state.perform(action), self))
+            children.append(Node(self.state.perform(action), self.depth + 1))
         return children
 
     def choose_child(self, choose="random"):
@@ -31,50 +33,48 @@ class Node(object):
         if choose == "uct":  # use UCT to choose a child
             uct_children = [child.Q + np.sqrt(CONFIDENT * np.log(self.N + 1) / (child.N + 1)) for child in
                             self.children]
-            # for uct in uct_children:
-            #     print(uct, end=" ")
             c = np.argmax(uct_children)
-            if not self.children[c].expand:  # not expanded, done
-                return self.children[c]
-            return self.children[c].choose_child("uct")  # expanded, recursively find unexpanded child
-        return None
+            return self.children[c]
+
+    def choose_child_nn(self, method):
+        if self.children == []:
+            self.children = self.get_children()
+        return method(self)
 
 
 CONFIDENT = 1.96  # constant C in UCT
 
-def rollout(node):
-    if node.state.is_leaf():
+
+def rollout(node, max_depth=None):
+    if node.depth == max_depth or node.state.is_leaf():
         result = node.state.score_for_max_player()
     else:
-        result = rollout(node.choose_child("random"))
+        result = rollout(node.choose_child("random"), max_depth)
+    node.N += 1
+    node.score_total += result
+    node.Q = node.score_total / node.N
     return result
 
-def back_propagate(node, result):
-    node.score_total += result
-    node.N += 1
-    node.Q = node.score_total / node.N
-    while (not node.parent == None):
-        node = node.parent
-        node.score_total += result
-        node.N += 1
-        node.Q = node.score_total / node.N
 
-def mcts(node):
-    start = time.time()
-    situation_judgment = situation_judgement(node)
-    print("situation judgement cost", time.time() - start, "s.")
-    if situation_judgment:
-        return situation_judgment
-    time_start = time.time()
+def rollout_nn(node, max_depth, method):
+    if node.depth == max_depth or node.state.is_leaf():
+        result = node.state.score_for_max_player()
+    else:
+        result = rollout_nn(node.choose_child_nn(method), max_depth, method)
+    node.N += 1
+    node.score_total += result
+    node.Q = node.score_total / node.N
+    return result
+
+
+def mcts(node, max_depth=None, run_time=20):
+    node.depth = 0
+    print("current player:", node.state.turn)
 
     # start mcst
-    while (time.time() - time_start < 20):
-        selection_child = node.choose_child("uct")  # choose an unexpanded child using UCT
-        expansion_child = selection_child.choose_child("random")  # expand the chosen child
-        result = rollout(expansion_child)
-        back_propagate(expansion_child, result)
-
-        selection_child.expand = True
+    time_start = time.time()
+    while (time.time() - time_start < run_time):
+        rollout(node, max_depth)
 
     # choose a middle-most position among largest uct?
     # i = np.argmax([child.Q + np.sqrt(CONFIDENT * np.log(node.N+1) / (child.N + 1)) for child in node.children])
@@ -103,88 +103,13 @@ def mcts(node):
     return node.children[middle_most_i]
 
 
-def situation_judgement(node: Node):
-    situation = ""
-    for x in range(node.state.board.shape[0] - 4):
-        for y in range(node.state.board.shape[1] - 4):
-            subBoard = node.state.board[x:x + 5, y:y + 5]
-            subBoard_num = np.zeros((5, 5))
-            for i in range(5):
-                for j in range(5):
-                    if subBoard[i][j] == "X":
-                        subBoard_num[i][j] = 1
-                    if subBoard[i][j] == "O":
-                        subBoard_num[i][j] = -1
-            # 1.AI have 4
-            # 1.1 Vertical
-            sum_axis0 = np.sum(subBoard_num, axis=0)
-            if (sum_axis0 == 4).any():
-                index_line = list(sum_axis0 == 4).index(True)
-                list_4 = list(subBoard[:, index_line])
-                index = list_4.index("_")
-                node.state.board[x + index][y + index_line] = "X"
-                situation = "VERTICAL 4"
-                return node
-            # 1.2 Horizontal
-            sum_axis1 = np.sum(subBoard_num, axis=1)
-            if (sum_axis1 == 4).any():
-                index_line = list(sum_axis1 == 4).index(True)
-                list_4 = list(subBoard[index_line])
-                index = list_4.index("_")
-                node.state.board[x + index_line][y + index] = "X"
-                situation = "HORIZONTAL 4"
-                return node
-            # 1.3 ↘Diagonal
-            list_diag = list(np.diag(subBoard))
-            if list_diag.count("X") == 4 and "_" in list_diag:
-                index = list_diag.index("_")
-                node.state.board[x + index][y + index] = "X"
-                situation = "DIAGONAL 4"
-                return node
-            # 1.4 ↙Diagonal
-            list_diag = list(np.diag(np.rot90(subBoard)))
-            if list_diag.count("X") == 4 and "_" in list_diag:
-                index = list_diag.index("_")
-                node.state.board[x + index][y + 5 - index] = "X"
-                situation = "↙DIAGONAL 4"
-                return node
-
-            # 2.opponent has 4
-            # 2.1 Vertical
-            sum_axis0 = np.sum(subBoard_num, axis=0)
-            if (sum_axis0 == -4).any():
-                index_line = list(sum_axis0 == -4).index(True)
-                list_4 = list(subBoard[:, index_line])
-                index = list_4.index("_")
-                node.state.board[x + index][y + index_line] = "X"
-                situation = "OPPONENT VERTICAL 4"
-                return node
-            # 2.2 Horizontal
-            sum_axis1 = np.sum(subBoard_num, axis=1)
-            if (sum_axis1 == -4).any():
-                index_line = list(sum_axis1 == -4).index(True)
-                list_4 = list(subBoard[index_line])
-                index = list_4.index("_")
-                node.state.board[x + index_line][y + index] = "X"
-                situation = "OPPONENT HORIZONTAL 4"
-                return node
-            # 2.3 ↘Diagonal
-            list_diag = list(np.diag(subBoard))
-            if list_diag.count("X") == -4 and "_" in list_diag:
-                index = list_diag.index("_")
-                node.state.board[x + index][y + index] = "X"
-                situation = "OPPONENT ↘ 4"
-                return node
-            # 2.4 ↙Diagonal
-            list_diag = list(np.diag(np.rot90(subBoard)))
-            if list_diag.count("X") == -4 and "_" in list_diag:
-                index = list_diag.index("_")
-                node.state.board[x + index][y + 5 - index] = "X"
-                situation = "OPPONENT ↙ 4"
-                return node
-
-    # current board has no situations above
-    return None
+def nn_decide(node, max_depth, run_time, method):
+    node.depth = 0
+    time_start = time.time()
+    while (time.time() - time_start < run_time):
+        rollout_nn(node, max_depth, method)
+    i = np.argmax([child.Q for child in node.children])
+    return node.children[i]
 
 def cal_processed_nodes(node):
     count = 1
@@ -196,11 +121,50 @@ def cal_processed_nodes(node):
     return count
 
 
+def random_put(state: GomokuState):
+    # computer plays white
+    choice = {}
+    count = 0
+    for i in range(np.size(state.board, 0)):
+        for j in range(np.size(state.board, 1)):
+            if state.board[i][j] == '_':
+                count += 1
+                choice[count] = [i, j]
+    random_pick = random.randint(1, count)
+    state.board[choice[random_pick][0]][choice[random_pick][1]] = 'O'
+    state.turn = 1
+    return state
+
+
 if __name__ == "__main__":
-    curNode = Node(initial_state())
-    print(curNode.state)
+    c_write = open("result_10_1.csv", "a+", newline='')
+    writer = csv.writer(c_write)
+    for i in range(10):
+        # rootNode = Node(random_put(initial_state(15,15)))
+        rootNode = Node(initial_state(10, 10))
+        rlist = []
+        curNode = rootNode
+        print(curNode.state)
+        total = 0
+        final_Q = 0
+        while not curNode.state.is_leaf():
+            child = mcts(curNode, 10)
+            final_Q = child.Q
+            total += cal_processed_nodes(curNode)
+            print(total)
+            print("-----------------")
+            print(child.state)
+            curNode = Node(random_put(child.state))
+            # curNode = child.choose_child()
+            print("-----------------")
+            print(curNode.state)
 
-    child = mcts(curNode)
-
-    print()
-    print(child.state)
+        print("{} game finish, number of tree nodes processed is {}".format(i, total))
+        rlist.append(curNode.state.score_for_max_player())
+        rlist.append(total)
+        rlist.append(final_Q)
+        writer.writerow(rlist)
+    # rootNode = Node(random_put(initial_state()))
+    # curNode = rootNode
+    # print(curNode.state)
+    c_write.close()

@@ -4,46 +4,109 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <title>Gomoku</title>
     <style>
-        #cvs{
+        #cvs {
             border: 2px solid #000;
         }
     </style>
 </head>
 <body>
-    <canvas id="cvs"></canvas>
-    <div id="tips">
-        <div id = "color">You are a visitor.</div>
-<!--        <div id = "info">Enter room id to Join a game!</div>-->
-    </div>
-    <div>
-        <!--        <button id="restart" disabled = true>Restart</button>-->
-        <input type="text" id="ver" placeholder="Ver_size" onkeyup="value=value.replace(/[^\d]/g,'')" size="10"/>
-        <input type="text" id="hor" placeholder="Hor_size" onkeyup="value=value.replace(/[^\d]/g,'')" size="10"/>
-        <button id="set" disabled=true>Set</button>
-        <button id="vs_ai">VS AI</button>
-        <button id="vs_random">VS Random</button>
-        <button id="ai_vs_ai">AI VS AI</button>
-        <button id="enter">Enter</button>
-        <!--        <input type="text" id="roomId" placeholder="Enter Room" onkeyup="value=value.replace(/[^\d]/g,'')" size="10"/>-->
-        <!--        <button id="join">Join</button>-->
-        <!--        <button id="leave" disabled = true>Leave Room</button>-->
-    </div>
-    <div style="width: 500px;border: 1px solid gray; height: 300px;">
-        <div style="width: 140px;height: 300px;float: left;text-align: left;">
-            <p><span>Now online:</span><span id="user_num">0</span></p>
-            <div id="user_list" style="overflow: auto;">
 
+<canvas id="cvs"></canvas>
+<div id="tips">
+
+    <!--        <div id = "info">Enter room id to Join a game!</div>-->
+</div>
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div class="span12">
+            <div id="color">
+                <p>
+                    You are a visitor.
+                </p>
             </div>
+            <form class="form-search">
+
+                <div class="col-xs-2">
+                    <input type="text" id="ver" class="form-control" placeholder="Ver_size"
+                           onkeyup="value=value.replace(/[^\d]/g,'')" size="10"/>
+                    <input type="text" id="hor" class="form-control" placeholder="Hor_size"
+                           onkeyup="value=value.replace(/[^\d]/g,'')" size="10"/>
+                    <button type="button" class="btn btn-primary" id="set">Set</button>
+                </div>
+
+            </form>
         </div>
-        <div id="msg_list" style="width: 358px;border:  1px solid gray; height: 298px;overflow: scroll;float: left;">
+        <div class="span12">
+            <form class="form-search">
+
+                <button type="button" class="btn" id="vs_tree_ai">vs Tree-AI</button>
+                <button type="button" class="btn" id="vs_nn_ai">vs NN-AI</button>
+                <button type="button" class="btn" id="vs_random">vs Random</button>
+                <button type="button" class="btn" id="ai_vs_ai">AI vs AI</button>
+                <button type="button" class="btn" id="enter">Enter</button>
+            </form>
+        </div>
+        <div class="span12">
+            <form class="form-search">
+                <div style="width: 140px;height: 300px;float: left;text-align: left;">
+                    <p><span>Now online:</span><span id="user_num">0</span></p>
+                    <div id="user_list" style="overflow: auto;">
+
+                    </div>
+                </div>
+                <div id="msg_list"
+                     style="width: 358px;border:  1px solid gray; height: 298px;overflow: scroll;float: left;">
+                </div>
+            </form>
+        </div>
+        <div class="span12">
+            <form class="form-search">
+
+                <textarea class="form-control" id="msg_box" rows="6" cols="50"
+                          onkeydown="confirm(event)"></textarea><br>
+                <input type="button" class="btn btn-primary" value="Send" onclick="send()">
+            </form>
         </div>
     </div>
+</div>
+<div>
+    <!--        <button id="restart" disabled = true>Restart</button>
+    <input type="text" id="ver" placeholder="Ver_size" onkeyup="value=value.replace(/[^\d]/g,'')" size="10"/>
+    <input type="text" id="hor" placeholder="Hor_size" onkeyup="value=value.replace(/[^\d]/g,'')" size="10"/>
+    <button id="set" disabled=true>Set</button>-->
+</div>
+<div>
 
-    <textarea id="msg_box" rows="6" cols="50" onkeydown="confirm(event)"></textarea><br>
-    <input type="button" value="Send" onclick="send()">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
-    <script src="./assets/js/socket.js"></script>
+    <!--        <input type="text" id="roomId" placeholder="Enter Room" onkeyup="value=value.replace(/[^\d]/g,'')" size="10"/>-->
+    <!--        <button id="join">Join</button>-->
+    <!--        <button id="leave" disabled = true>Leave Room</button>-->
+</div>
+<!--    <div style="width: 500px;border: 1px solid gray; height: 300px;">
+      <div style="width: 140px;height: 300px;float: left;text-align: left;">
+          <p><span>Now online:</span><span id="user_num">0</span></p>
+          <div id="user_list" style="overflow: auto;">
+
+          </div>
+      </div>
+      <div id="msg_list" style="width: 358px;border:  1px solid gray; height: 298px;overflow: scroll;float: left;">
+      </div>
+  </div>
+
+  <textarea class="form-control" id="msg_box" rows="6" cols="50" onkeydown="confirm(event)"></textarea><br>
+  <input type="button" value="Send" onclick="send()">-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+<script src="./assets/js/socket.js"></script>
+
+
 </body>
 </html>

@@ -6,7 +6,7 @@ var VERTICAL_SIZE = null;
 var checkerBoard_type = new Array();
 var checkerBoard_state = new Array();
 var adjacentBlock = new Array();
-//  0 is wait, 1 is vs_ai, 2 is vs_human, 3 is vs_random, 4 is ai_vs_ai
+//  0 is wait, 1 is vs_tree_ai, 2 is vs_human, 3 is vs_random, 4 is ai_vs_ai, 5 is tree_ai vs nn_ai
 var game_state = 0;
 
 //for ai_vs_ai
@@ -68,7 +68,7 @@ ws.onmessage = function(e) {
       case 'init':
          HORIZONTAL_SIZE = msg.HORIZONTAL_SIZE;
          VERTICAL_SIZE = msg.VERTICAL_SIZE;
-         if (color == '' || game_state == 1 || game_state == 3) {
+         if (color == '' || game_state == 1 || game_state == 3 || game_state == 5) {
             if (color == '') {
                game_state = 2;
             }
@@ -115,6 +115,7 @@ ws.onmessage = function(e) {
       case 'ai_vs_ai_put':
          AI_next_x = msg.x;
          AI_next_y = msg.y;
+         document.getElementById('enter').disabled = false;
          document.querySelector('#color').innerHTML = AI_next_color + " is ready to placed a stone on (" + AI_next_x + ", " + AI_next_y + "), press Enter to place";
          return;
 
@@ -129,6 +130,7 @@ ws.onmessage = function(e) {
             cvs.onclick = putChess;
          }
          return;
+
       case 'gameover':
          if(color!=msg.color){
             var x=msg.x;
@@ -143,7 +145,6 @@ ws.onmessage = function(e) {
          msg.content = msg.color+' Win!'
          break;
    }
-
    var data = sender + msg.content;
    listMsg(data);
 };
@@ -163,7 +164,6 @@ window.onbeforeunload = function() {
    sendMsg(user_info);
    ws.close();
 }
-
 
 /**
  * press enter to send message
@@ -282,7 +282,6 @@ function uuid(len, radix) {
  * initial checkboard
  */
 function initCheckerBoard(){
-//   drawCheckerBoard();
 
    if(color =='visitor'){
       return;
@@ -361,9 +360,6 @@ function drawCheckerBoard(){
    for(var i = 0; i < HORIZONTAL_SIZE; i++){
       for(var j = 0; j < VERTICAL_SIZE; j++){
          ctx.strokeRect(i *GRID_SIZE, j * GRID_SIZE, GRID_SIZE, GRID_SIZE)
-         // if(checkerBoard[i][j].state){
-         //    drawChess(i,j);
-         // }
       }
    }
    ctx.closePath();
@@ -390,21 +386,47 @@ document.getElementById('vs_random').onclick = function () {
    sendMsg(msg);
 }
 
-document.getElementById('vs_ai').onclick = function () {
+document.getElementById('vs_tree_ai').onclick = function () {
    var msg = {
-      'type': 'vs_ai',
+      'type': 'vs_tree_ai',
       'content': uname
    };
    game_state = 1;
    sendMsg(msg);
 }
+
+document.getElementById('vs_nn_ai').onclick = function () {
+   var ver = document.getElementById("ver").value;
+   var hor = document.getElementById("hor").value;
+   if (ver == hor && (ver == 10 || ver == 12 || ver == 14 || ver == 16 || ver == 18)) {
+
+      var msg = {
+         'type': 'vs_nn_ai',
+         'content': uname
+      };
+      game_state = 5;
+      sendMsg(msg);
+
+   } else {
+      alert('Size should be one of 10x10, 12x12, 14x14, 16x16, 18x18')
+   }
+}
+
 document.getElementById('ai_vs_ai').onclick = function () {
-   var msg = {
-      'type': 'ai_vs_ai',
-      'content': uname
-   };
-   game_state = 0;
-   sendMsg(msg);
+   var ver = document.getElementById("ver").value;
+   var hor = document.getElementById("hor").value;
+   if (ver == hor && (ver == 10 || ver == 12 || ver == 14 || ver == 16 || ver == 18)) {
+
+      var msg = {
+         'type': 'ai_vs_ai',
+         'content': uname
+      };
+      game_state = 5;
+      sendMsg(msg);
+
+   } else {
+      alert('Size should be one of 10x10, 12x12, 14x14, 16x16, 18x18')
+   }
 }
 
 document.getElementById('enter').onclick = function () {
@@ -417,6 +439,7 @@ document.getElementById('enter').onclick = function () {
       document.querySelector('#color').innerHTML = AI_next_color + " has placed a stone on (" + AI_next_x + ", " + AI_next_y + ")";
       AI_next_color = (AI_next_color == "black") ? "white" : "black"
    }
+   document.getElementById('enter').disabled = true;
    var msg = {
       'type': 'ai_vs_ai_put',
       'content': uname,
@@ -464,17 +487,20 @@ function randomNum(minNum,maxNum){
    }
 }
 
+/**
+ * random put disabled
+ */
 function randomPut(x,y) {
-   findAdjcblock(x,y);
-   var size= adjacentBlock.length;
-   console.log(size);
-   if(size!=0 && randomNum(0,3)>2){
-      index = randomNum(0,size-1);
-      x=adjacentBlock[index][0];
-      y=adjacentBlock[index][1];
-   }
-   adjacentBlock = [];
-   return [x,y]
+   // findAdjcblock(x,y);
+   // var size= adjacentBlock.length;
+   // console.log(size);
+   // if(size!=0 && randomNum(0,3)>2){
+   //    index = randomNum(0,size-1);
+   //    x=adjacentBlock[index][0];
+   //    y=adjacentBlock[index][1];
+   // }
+   // adjacentBlock = [];
+   return [x, y]
 }
 
 
