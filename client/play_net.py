@@ -10,7 +10,7 @@ from client.mcts import Node, mcts, nn_decide
 
 def load_net(board_size):
     net = client.net.LeNet(board_size)
-    net.load_state_dict(tr.load("../model%d.pth" % board_size))
+    net.load_state_dict(tr.load("model%d.pth" % board_size))
     return net
 
 
