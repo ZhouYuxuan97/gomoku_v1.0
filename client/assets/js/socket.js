@@ -6,7 +6,8 @@ var VERTICAL_SIZE = null;
 var checkerBoard_type = new Array();
 var checkerBoard_state = new Array();
 var adjacentBlock = new Array();
-//  0 is wait, 1 is vs_tree_ai, 2 is vs_human, 3 is vs_random, 4 is ai_vs_ai, 5 is tree_ai vs nn_ai
+//  # 0 is wait, 1 is vs_tree_ai, 2 is vs_human, 3 is vs_random, 4 is nn_vs_tree, 5 is vs_nn_ai,
+// # 6 is nn vs nn, 7 is tree vs tree
 var game_state = 0;
 
 //for ai_vs_ai
@@ -412,22 +413,58 @@ document.getElementById('vs_nn_ai').onclick = function () {
    }
 }
 
-document.getElementById('ai_vs_ai').onclick = function () {
+document.getElementById('nn_ai_vs_nn_ai').onclick = function () {
    var ver = document.getElementById("ver").value;
    var hor = document.getElementById("hor").value;
    if (ver == hor && (ver == 10 || ver == 12 || ver == 14 || ver == 16 || ver == 18)) {
 
       var msg = {
-         'type': 'ai_vs_ai',
+         'type': 'nn_ai_vs_nn_ai',
          'content': uname
       };
-      game_state = 5;
+      game_state = 6;
       sendMsg(msg);
 
    } else {
       alert('Size should be one of 10x10, 12x12, 14x14, 16x16, 18x18')
    }
 }
+
+document.getElementById('tree_ai_vs_tree_ai').onclick = function () {
+   var ver = document.getElementById("ver").value;
+   var hor = document.getElementById("hor").value;
+   if (ver == hor && (ver == 10 || ver == 12 || ver == 14 || ver == 16 || ver == 18)) {
+
+      var msg = {
+         'type': 'tree_ai_vs_tree_ai',
+         'content': uname
+      };
+      game_state = 7;
+      sendMsg(msg);
+
+   } else {
+      alert('Size should be one of 10x10, 12x12, 14x14, 16x16, 18x18')
+   }
+}
+
+
+document.getElementById('nn_ai_vs_tree_ai').onclick = function () {
+   var ver = document.getElementById("ver").value;
+   var hor = document.getElementById("hor").value;
+   if (ver == hor && (ver == 10 || ver == 12 || ver == 14 || ver == 16 || ver == 18)) {
+
+      var msg = {
+         'type': 'nn_ai_vs_tree_ai',
+         'content': uname
+      };
+      game_state = 4;
+      sendMsg(msg);
+
+   } else {
+      alert('Size should be one of 10x10, 12x12, 14x14, 16x16, 18x18')
+   }
+}
+
 
 document.getElementById('enter').onclick = function () {
    if (game_state != 3) {
