@@ -35,7 +35,7 @@ def encode(state):
     return one_hot
 
 
-def get_batch(board_size=10, num_games=5):
+def get_batch(board_size=10, num_games=1):
     states = []
     scores = []
     gen = generate(board_size, num_games)
@@ -48,7 +48,8 @@ def get_batch(board_size=10, num_games=5):
 
 
 if __name__ == "__main__":
-    board_size, num_games = 10, 3
+    # set board size and number of games below
+    board_size, num_games = 10, 25
     inputs, outputs = get_batch(board_size, num_games=num_games)
     print(inputs.shape)
     print(outputs.shape)
