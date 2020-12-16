@@ -75,7 +75,7 @@ if __name__ == "__main__":
         train_loss.append(e_train.item() / (len(shuffle) - split))
         test_loss.append(e_test.item() / split)
 
-    tr.save(net.state_dict(), "../model%d.pth" % board_size)
+    tr.save(net.state_dict(), "model%d.pth" % board_size)
 
     import matplotlib.pyplot as pt
 
